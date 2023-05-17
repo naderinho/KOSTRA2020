@@ -19,7 +19,14 @@ def requestCoordinates(query):
     lon, lat = resp.json()['features'][0]['geometry']['coordinates']
     return lon, lat
 
-st.title('Starkniederschlagshöhen und Starkniederschlagsspenden nach KOSTRA2020')
+st.set_page_config(
+    page_title='KOSTRA - WebApp',
+    page_icon='🌧️',
+    layout='centered'
+)
+
+st.title(' DWD KOSTRA 2020')
+st.header('Starkniederschlagshöhen und Starkniederschlagsspenden')
 
 @st.cache_data
 def load_data():
@@ -28,30 +35,36 @@ def load_data():
 kostraData, chordSheme = load_data()
 query = ''
 
-query = st.text_input('Ort eingeben')
+query = st.text_input('Orts-/Adressangabe:')
 
 if query != '':
     filename = 'KOSTRA_2020_' + str(query)
     lon, lat = requestCoordinates(query)
 
     index = np.argmin(np.sum((chordSheme - np.array([[lon,lat]]))**2,axis=1))
-    st.write('Rasterkoordinaten: ' + str(chordSheme[index,:]))
+    lon, lat = chordSheme[index,:]
+    
+    st.markdown('**Rasterkoordinaten:**')
+    st.write('%.4f , %.4f'%(lat,lon))
     
     # Show the map
-    st.write('Kartenansicht:')
+    st.subheader('Kartenansicht:')
     st.map(pd.DataFrame(data=[[lat,lon]], columns=['lat','lon']))
     
     duration = ['5 min','10 min','15 min','20 min','30 min','45 min','60 min','90 min','2 h','3 h','4 h','6 h','9 h','12 h','18 h','24 h','48 h','72 h','96 h','120 h','144 h','168 h']
     duration2 = [5,10,15,20,30,45,60,90,120,180,240,360,540,720,1080,1440,2880,4320,5760,7200,8640,10080]
     returnPeriod = ['1 a','2 a','3 a','5 a','10 a','20 a','30 a','50 a','100 a']
 
+    st.subheader('Auswahl der Datengrundlage:')
     option = st.selectbox(
-        'Auswahl der Datengrundlage:',
-        ('Bemessungsniederschläge [mm]', 'Bemessungsspende [L/s/ha]', 'Unsicherheit [%]')
-    )
+        label='Auswahl der Datengrundlage:', 
+        options=('Bemessungsniederschläge [mm]', 'Bemessungsspende [L/s/ha]', 'Unsicherheit [%]'), 
+        label_visibility='collapsed'
+        )
+    
     k=0
     if option == 'Bemessungsniederschläge [mm]': k = 0
-    elif option == 'Bemessungsspende in [L/s/ha]': k = 9
+    elif option == 'Bemessungsspende [L/s/ha]': k = 9
     elif option == 'Unsicherheit [%]': k = 18
 
     # Create the Pandas DataFrame of the selected location
@@ -59,7 +72,7 @@ if query != '':
     df2 = pd.DataFrame(data=kostraData[:,index,k:k+9], index=duration2, columns=returnPeriod)
     
     # Preview the data
-    st.write('Darstellung der %s über Andauer- und Wiederkehrzeit:'%(option))
+    st.subheader('Darstellung der %s über Andauer- und Wiederkehrzeit:'%(option))
     st.dataframe(df, use_container_width=True)
     
     # Create the CSV-Download button
@@ -72,12 +85,17 @@ if query != '':
     )
     
     # Additional graphs
+    st.subheader("Grafische Darstellung")
+    
+    checkboxLog = st.checkbox('Logarithmische Darstellung')
+    
     fig = px.line(df2,
                   labels={
                      "value": option,
                      "index": "Niederschlagsdauer in min",
                      "variable": "Wiederkehrzeit (Jahre)"
                      }, 
+                  log_x=checkboxLog,
                   title=option, markers=True)
     st.plotly_chart(fig, use_container_width=True)
 
