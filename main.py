@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import requests, os
 from scipy.io import loadmat
+import plotly.express as px
 
 def requestCoordinates(query):
     url = 'https://nominatim.openstreetmap.org/search'
@@ -71,6 +72,13 @@ if query != '':
     )
     
     # Additional graphs
-    st.line_chart(data=df2, x='Andauerzeit [min]', use_container_width=True)
+    fig = px.line(df2,
+                  labels={
+                     "value": option,
+                     "index": "Niederschlagsdauer in min",
+                     "variable": "Wiederkehrzeit (Jahre)"
+                     }, 
+                  title=option, markers=True)
+    st.plotly_chart(fig, use_container_width=True)
 
 st.write('Quelle: https://www.dwd.de/DE/service/copyright/copyright_node.html')
