@@ -41,15 +41,18 @@ if query != '':
     filename = 'KOSTRA_2020_' + str(query)
     lon, lat = requestCoordinates(query)
 
-    index = np.argmin(np.sum((chordSheme - np.array([[lon,lat]]))**2,axis=1))
-    lon, lat = chordSheme[index,:]
+    index = np.argmin(np.sum((chordSheme[:,12:14] - np.array([[lon,lat]]))**2,axis=1))
+    latCenter, lonCenter = chordSheme[index,12:14]
+    raster = chordSheme[index,4:12].reshape(4,2)
+    index_rc = chordSheme[index,0]
     
-    st.markdown('**Rasterkoordinaten:**')
+    st.markdown('**Koordinaten:**')
     st.write('%.4f , %.4f'%(lat,lon))
-    
+    st.write('INDEX_RC: %i' % (int(index_rc)))
+
     # Show the map
     st.subheader('Kartenansicht:')
-    st.map(pd.DataFrame(data=[[lat,lon]], columns=['lat','lon']))
+    st.map(pd.DataFrame(data=np.append(raster,np.array([[lon,lat]]),axis=0), columns=['lon','lat']))
     
     duration = ['5 min','10 min','15 min','20 min','30 min','45 min','60 min','90 min','2 h','3 h','4 h','6 h','9 h','12 h','18 h','24 h','48 h','72 h','96 h','120 h','144 h','168 h']
     duration2 = [5,10,15,20,30,45,60,90,120,180,240,360,540,720,1080,1440,2880,4320,5760,7200,8640,10080]
@@ -99,4 +102,4 @@ if query != '':
                   title=option, markers=True)
     st.plotly_chart(fig, use_container_width=True)
 
-st.write('Quelle: https://www.dwd.de/DE/service/copyright/copyright_node.html')
+st.write('Quelle: Deutscher Wetterdienst')
